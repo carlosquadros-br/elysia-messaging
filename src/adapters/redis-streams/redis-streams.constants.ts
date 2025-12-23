@@ -32,6 +32,8 @@ export const RedisStreams = {
     MAX_RETRIES: 5,
     /** Block time when waiting for messages (ms) */
     BLOCK_MS: 5000,
+    /** Number of messages to read per batch */
+    BATCH_SIZE: 10,
     /** Deduplication TTL (24 hours) */
     DEDUPE_TTL_SECONDS: 86400,
   },

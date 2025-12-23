@@ -5,6 +5,58 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.0] - 2025-12-23
+
+### 🎉 Major Release: Redis Streams Adapters Fully Implemented
+
+This release completes the Redis Streams implementation, making the plugin **production-ready**!
+
+### Added
+
+- ✅ **Redis Streams Adapter Complete**
+  - `RedisStreamsBus.publish()` - Fully implemented with `XADD`
+  - `RedisStreamsConsumer.subscribe()` - Fully implemented with `XREADGROUP`
+  - `RedisDedupeStore` - Fully implemented with Redis `SET` + TTL
+  - Consumer group auto-creation with `XGROUP CREATE`
+  - Automatic ACK with `XACK` after successful processing
+  - Batch processing (10 messages per batch)
+  - Background consumer loop with configurable block time
+  - Proper message parsing from Redis fields to MessageEnvelope
+  - Retry logic (messages stay in pending on failure)
+  - DLQ support for messages exceeding max retries
+
+### Implementation Details
+
+**RedisStreamsBus:**
+```typescript
+// Publishes to Redis Streams with XADD
+await bus.publish(topic, envelope)
+// → XADD stream:topic * eventId ... payload ...
+```
+
+**RedisStreamsConsumer:**
+```typescript
+// Consumes with XREADGROUP in background loop
+await consumer.subscribe(topic, handler, { consumerGroup, consumerName })
+// → XREADGROUP GROUP group consumer COUNT 10 BLOCK 5000 STREAMS stream:topic >
+// → Processes messages
+// → XACK stream:topic group messageId
+```
+
+**RedisDedupeStore:**
+```typescript
+// Idempotency with Redis SET
+await dedupe.mark(eventId, ttl)
+// → SETEX dedupe:eventId ttl 1
+```
+
+### Changed
+
+- Updated version to 0.3.0
+- No breaking changes from 0.2.0
+
+---
+
 ## [0.2.0] - 2025-12-23
 
 ### 🎉 Major Release: Production-Grade Refactor

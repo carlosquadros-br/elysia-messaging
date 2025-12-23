@@ -12,8 +12,6 @@ export class RedisStreamsBus implements MessageBus {
   constructor(private readonly redis: Redis) {}
 
   async publish<T>(topic: TopicName | string, envelope: MessageEnvelope<T>): Promise<void> {
-    // TODO: Implement Redis Streams XADD
-    // Convert topic to stream key: stream:video.jobs
     const streamKey = `${REDIS_PREFIXES.STREAM}${topic}`
 
     // Serialize envelope to Redis fields
@@ -29,11 +27,14 @@ export class RedisStreamsBus implements MessageBus {
       ...(envelope.causationId && { causationId: envelope.causationId }),
     }
 
-    // Publish to Redis Stream
-    // await this.redis.xadd(streamKey, RedisStreams.IDS.AUTO, ...Object.entries(fields).flat())
+    // Publish to Redis Stream with XADD
+    await this.redis.xadd(
+      streamKey,
+      RedisStreams.IDS.AUTO,
+      ...Object.entries(fields).flat()
+    )
 
-    console.log(`[RedisStreamsBus] Publishing to ${streamKey}:`, envelope.type)
-    throw new Error('Not implemented yet - uncomment the xadd line above')
+    console.log(`[RedisStreamsBus] Published to ${streamKey}:`, envelope.eventId)
   }
 
   async close(): Promise<void> {

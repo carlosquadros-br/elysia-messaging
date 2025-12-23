@@ -11,31 +11,21 @@ export class RedisDedupeStore implements DedupeStore {
   constructor(private readonly redis: Redis) {}
 
   async has(eventId: string): Promise<boolean> {
-    // TODO: Check if key exists in Redis
     const key = this.getKey(eventId)
-    // const exists = await this.redis.exists(key)
-    // return exists === 1
-
-    console.log(`[RedisDedupeStore] Checking if ${eventId} exists`)
-    throw new Error('Not implemented yet')
+    const exists = await this.redis.exists(key)
+    return exists === 1
   }
 
   async mark(eventId: string, ttlSeconds = RedisStreams.DEFAULTS.DEDUPE_TTL_SECONDS): Promise<void> {
-    // TODO: Set key with TTL
     const key = this.getKey(eventId)
-    // await this.redis.setex(key, ttlSeconds, '1')
-
-    console.log(`[RedisDedupeStore] Marking ${eventId} as processed (TTL: ${ttlSeconds}s)`)
-    throw new Error('Not implemented yet')
+    await this.redis.setex(key, ttlSeconds, '1')
+    console.log(`[RedisDedupeStore] Marked ${eventId} as processed (TTL: ${ttlSeconds}s)`)
   }
 
   async remove(eventId: string): Promise<void> {
-    // TODO: Delete key from Redis
     const key = this.getKey(eventId)
-    // await this.redis.del(key)
-
-    console.log(`[RedisDedupeStore] Removing ${eventId}`)
-    throw new Error('Not implemented yet')
+    await this.redis.del(key)
+    console.log(`[RedisDedupeStore] Removed ${eventId}`)
   }
 
   async close(): Promise<void> {

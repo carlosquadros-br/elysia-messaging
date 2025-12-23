@@ -10,8 +10,9 @@
  * - Observability hooks
  * - Both functional and OO consumer styles
  * - Enhanced handler context with messaging injection
+ * - Redis Streams adapter fully implemented
  * 
- * @version 0.2.0
+ * @version 0.3.0
  * @author carlos.eduardo.br@gmail.com
  * @license MIT
  */

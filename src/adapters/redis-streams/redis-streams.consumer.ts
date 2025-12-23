@@ -24,31 +24,118 @@ export class RedisStreamsConsumer implements MessageConsumer {
     handler: MessageHandler<T>,
     options: ConsumerOptions
   ): Promise<void> {
-    // TODO: Implement Redis Streams XREADGROUP consumer
     const streamKey = `${REDIS_PREFIXES.STREAM}${topic}`
-    const { consumerGroup, consumerName, maxRetries = RedisStreams.DEFAULTS.MAX_RETRIES } = options
+    const { 
+      consumerGroup, 
+      consumerName, 
+      maxRetries = RedisStreams.DEFAULTS.MAX_RETRIES,
+      blockMs = RedisStreams.DEFAULTS.BLOCK_MS,
+      startId = '>'
+    } = options
 
     console.log(`[RedisStreamsConsumer] Subscribing to ${streamKey}`)
     console.log(`  Consumer Group: ${consumerGroup}`)
     console.log(`  Consumer Name: ${consumerName}`)
 
-    // TODO: Create consumer group if it doesn't exist
-    // try {
-    //   await this.redis.xgroup('CREATE', streamKey, consumerGroup, '0', 'MKSTREAM')
-    // } catch (error) {
-    //   // Group already exists, that's fine
-    // }
+    // Create consumer group if it doesn't exist
+    try {
+      await this.redis.xgroup('CREATE', streamKey, consumerGroup, '0', 'MKSTREAM')
+      console.log(`[RedisStreamsConsumer] Created consumer group: ${consumerGroup}`)
+    } catch (error: any) {
+      if (error.message && !error.message.includes('BUSYGROUP')) {
+        console.error(`[RedisStreamsConsumer] Error creating group:`, error)
+      }
+      // Group already exists, that's fine
+    }
 
-    // TODO: Start consuming loop
-    // this.isRunning = true
-    // while (this.isRunning) {
-    //   // Read from stream with XREADGROUP
-    //   // Parse messages and call handler
-    //   // Handle retries and DLQ
-    //   // ACK successful messages with XACK
-    // }
+    // Start consuming loop in background
+    this.isRunning = true
+    this.consumeLoop(streamKey, consumerGroup, consumerName, handler, blockMs, maxRetries)
+  }
 
-    throw new Error('Not implemented yet')
+  /**
+   * Main consumer loop
+   */
+  private async consumeLoop<T>(
+    streamKey: string,
+    consumerGroup: string,
+    consumerName: string,
+    handler: MessageHandler<T>,
+    blockMs: number,
+    maxRetries: number
+  ): Promise<void> {
+    while (this.isRunning) {
+      try {
+        // Read from stream with XREADGROUP
+        const results: any = await this.redis.xreadgroup(
+          'GROUP',
+          consumerGroup,
+          consumerName,
+          'COUNT',
+          RedisStreams.DEFAULTS.BATCH_SIZE.toString(),
+          'BLOCK',
+          blockMs.toString(),
+          'STREAMS',
+          streamKey,
+          '>'
+        )
+
+        if (!results || results.length === 0) {
+          continue // No messages, loop again
+        }
+
+        // Process each message
+        for (const streamData of results) {
+          const [stream, messages] = streamData
+          
+          for (const messageData of messages) {
+            const [messageId, fieldsArray] = messageData
+            
+            try {
+              // Parse message
+              const fieldsObj = this.fieldsToObject(fieldsArray as string[])
+              const envelope = this.parseMessage<T>(fieldsObj)
+
+              // Call handler
+              await handler(envelope)
+
+              // ACK message
+              await this.redis.xack(streamKey, consumerGroup, messageId)
+            } catch (error) {
+              console.error(`[RedisStreamsConsumer] Handler error:`, error)
+              
+              // Check retry count
+              const fieldsObj = this.fieldsToObject(fieldsArray as string[])
+              const attempts = parseInt(fieldsObj.attempts || '0', 10)
+              
+              if (attempts >= maxRetries) {
+                // Send to DLQ
+                const envelope = this.parseMessage<T>(fieldsObj)
+                await this.sendToDLQ(envelope, error as Error)
+                
+                // ACK to remove from pending
+                await this.redis.xack(streamKey, consumerGroup, messageId)
+              }
+              // If not max retries, message stays in pending and will be redelivered
+            }
+          }
+        }
+      } catch (error) {
+        console.error(`[RedisStreamsConsumer] Consumer loop error:`, error)
+        await new Promise(resolve => setTimeout(resolve, 1000)) // Wait before retry
+      }
+    }
+  }
+
+  /**
+   * Convert Redis fields array to object
+   */
+  private fieldsToObject(fields: string[]): Record<string, string> {
+    const obj: Record<string, string> = {}
+    for (let i = 0; i < fields.length; i += 2) {
+      obj[fields[i]] = fields[i + 1]
+    }
+    return obj
   }
 
   async close(): Promise<void> {

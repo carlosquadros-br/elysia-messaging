@@ -1,6 +1,6 @@
 {
   "name": "elysia-messaging",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Production-grade, type-safe messaging plugin for ElysiaJS (broker-agnostic).",
   "author": "carlos.eduardo.br@gmail.com",
   "license": "MIT",
