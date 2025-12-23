@@ -1,0 +1,68 @@
+{
+  "name": "elysia-messaging",
+  "version": "0.2.0",
+  "description": "Production-grade, type-safe messaging plugin for ElysiaJS (broker-agnostic).",
+  "author": "carlos.eduardo.br@gmail.com",
+  "license": "MIT",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./redis-streams": {
+      "types": "./dist/adapters/redis-streams/index.d.ts",
+      "default": "./dist/adapters/redis-streams/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE",
+    "CHANGELOG.md",
+    "UPGRADE-GUIDE.md"
+  ],
+  "keywords": [
+    "elysia",
+    "elysiajs",
+    "plugin",
+    "messaging",
+    "event-driven",
+    "message-bus",
+    "pub-sub",
+    "type-safe",
+    "typescript",
+    "bun",
+    "redis-streams",
+    "broker-agnostic"
+  ],
+  "scripts": {
+    "clean": "rimraf dist",
+    "build": "tsc -p tsconfig.json",
+    "dev": "tsc --watch",
+    "typecheck": "tsc --noEmit",
+    "prepublishOnly": "npm run clean && npm run build"
+  },
+  "peerDependencies": {
+    "elysia": ">=1.0.0"
+  },
+  "dependencies": {
+    "@sinclair/typebox": "^0.34.0",
+    "ioredis": "^5.3.2"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.5",
+    "elysia": "^1.0.0",
+    "typescript": "^5.3.3"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/carlosquadros-br/elysia-messaging.git"
+  },
+  "bugs": {
+    "url": "https://github.com/carlosquadros-br/elysia-messaging/issues"
+  },
+  "homepage": "https://github.com/carlosquadros-br/elysia-messaging#readme"
+}

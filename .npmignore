@@ -1,0 +1,41 @@
+# Source files (we ship compiled code)
+src/
+tsconfig.json
+
+# Development files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Testing
+coverage/
+.nyc_output/
+**/*.test.ts
+**/*.spec.ts
+
+# CI/CD
+.github/
+.gitlab-ci.yml
+.travis.yml
+
+# Git
+.git/
+.gitignore
+.gitattributes
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+
+# Logs
+*.log
+npm-debug.log*
+pnpm-debug.log*
+
+# Environment
+.env
+.env.*
+
